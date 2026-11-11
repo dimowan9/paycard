@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}充值 · {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>充值 / <span class="grad">购买套餐</span></h1>
+    <p>首次使用需先在本站充值 · 充值手续费 {{ fee_pct }}% · 使用 USDT（TRC20）支付</p>
+    {% if user %}
+      <div class="notice">💰 当前余额：<b style="color:#fff">{{ user.balance|money }} USDT</b>　余额充足可直接购买套餐</div>
+    {% else %}
+      <div class="notice">请先 <a href="{{ url_for('login', next='/recharge') }}">登录</a> 或 <a href="{{ url_for('register') }}">注册</a> 后再充值购买</div>
+    {% endif %}
+  </div>
+
+  <div class="plans4">
+    {% for code, p in plans.items() %}
+    <div class="plan {% if loop.index == 2 %}hot{% endif %}">
+      {% if loop.index == 2 %}<span class="badge">🔥 最划算</span>{% endif %}
+      <div class="em">{{ '🪪' if p.card_type == 'physical' else ('💳' * p.qty) }}</div>
+      <h3>{{ p.name }}</h3>
+      <div class="desc">{{ p.desc }}</div>
+      <div class="price">${{ p.price|money|replace('.00','') }} <small>USDT</small></div>
+      <ul>
+        <li>{{ p.qty }} 张{{ '实体卡' if p.card_type == 'physical' else '虚拟卡' }}</li>
+        <li>已包含开卡费用</li>
+        <li>{{ '寄送事宜请咨询客服' if p.card_type == 'physical' else '余额扣款，发卡后可见' }}</li>
+      </ul>
+      {% if user %}
+      <form method="post" action="{{ url_for('buy', code=code) }}" onsubmit="return confirm('确认使用余额 {{ p.price|money }} USDT 购买「{{ p.name }}」？')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn {% if loop.index == 2 %}btn-pri{% else %}btn-ghost{% endif %}" style="width:100%">余额购买</button>
+      </form>
+      {% else %}
+      <a href="{{ url_for('login', next='/recharge') }}" class="btn {% if loop.index == 2 %}btn-pri{% else %}btn-ghost{% endif %}">登录后购买</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <form class="plan" id="custom" method="post" action="{{ url_for('recharge_create') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="em">✏️</div>
+      <h3>为账户充值</h3>
+      <div class="desc">自定义金额，充值到账户余额</div>
+      <div class="amt"><span>$</span><input id="amount" name="amount" type="number" min="{{ cfg.MIN_RECHARGE }}" max="{{ cfg.MAX_RECHARGE }}" step="0.01" placeholder="输入金额" inputmode="decimal" value="{{ prefill if prefill else '' }}" required></div>
+      <div class="quick"><button type="button" data-v="88">88</button><button type="button" data-v="158">158</button><button type="button" data-v="500">500</button></div>
+      <div class="field" style="margin:12px 0 0"><input name="remark" maxlength="200" placeholder="备注（选填），默认：为账户充值"></div>
+      <div class="calc" id="calc">手续费 {{ fee_pct }}%，最低 {{ cfg.MIN_RECHARGE|money|replace('.00','') }} USDT</div>
+      <div style="flex:1;min-height:16px"></div>
+      {% if user %}
+      <button class="btn btn-pri" style="width:100%">去支付</button>
+      {% else %}
+      <a href="{{ url_for('login', next='/recharge') }}" class="btn btn-ghost">登录后充值</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="vip">
+    <div>
+      <h3>💎 大额充值优惠</h3>
+      <p>批量开卡、大额充值可享专属优惠价格，请咨询客服领取。</p>
+    </div>
+    <a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener" class="btn btn-pri">咨询客服领取优惠 →</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const RATE = {{ cfg.FEE_RATE }};
+  const input = document.getElementById('amount'), calc = document.getElementById('calc');
+  function update() {
+    const v = parseFloat(input.value);
+    if (!v || v <= 0) { calc.innerHTML = '手续费 {{ fee_pct }}%，最低 {{ cfg.MIN_RECHARGE|money|replace(".00","") }} USDT'; return; }
+    const fee = Math.round(v * RATE * 100) / 100, total = Math.round((v + fee) * 100) / 100;
+    calc.innerHTML = '到账 ' + v.toFixed(2) + ' + 手续费 ' + fee.toFixed(2) + ' = 实付 <b>' + total.toFixed(2) + ' USDT</b>';
+  }
+  document.querySelectorAll('.quick button').forEach(b => b.onclick = () => { input.value = b.dataset.v; update(); });
+  input.addEventListener('input', update); update();
+</script>
+{% endblock %}

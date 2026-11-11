@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}卡库{% endblock %}
+{% block content %}
+<h1>💳 卡库 / 录入卡片</h1>
+
+<div class="card">
+  <h2 style="margin-top:0">手动录入卡片</h2>
+  <form method="post" class="grid-form" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div><label>卡号</label><input name="card_number" required placeholder="4859 1234 5678 2048" inputmode="numeric"></div>
+    <div><label>CVV 安全码</label><input name="cvv" required maxlength="4" placeholder="123" inputmode="numeric"></div>
+    <div><label>有效期（MM/YY）</label><input name="expiry" required maxlength="5" placeholder="09/28"></div>
+    <div><label>类型</label><select name="card_type"><option value="virtual">虚拟卡</option><option value="physical">实体卡</option></select></div>
+    <div><label>备注（选填，用户可见）</label><input name="note" maxlength="255" placeholder="如：适用于广告投放"></div>
+    <div><button class="btn btn-pri" style="width:100%;justify-content:center;padding:9px">录入卡库</button></div>
+  </form>
+  <p style="color:#6b7290;margin-top:10px;font-size:12.5px">卡号与 CVV 加密存储；同一卡号不能重复录入。录入后在「用户管理 → 发卡 / 撤回」中发给指定用户。</p>
+</div>
+
+<div class="tabs">
+  <a href="{{ url_for('cards') }}" class="{{ 'on' if not status }}">全部</a>
+  {% for k, v in CARD_STATUS.items() %}<a href="{{ url_for('cards', status=k) }}" class="{{ 'on' if status == k }}">{{ v }}</a>{% endfor %}
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ID</th><th>卡号（点击显示）</th><th>CVV</th><th>有效期</th><th>类型</th><th>状态</th><th>持卡用户</th><th>备注</th><th>录入时间</th><th>操作</th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td class="mono"><span class="reveal" data-full="{{ c.number|cardfmt }}" data-mask="{{ c.brand }} **** {{ c.last4 }}">{{ c.brand }} **** {{ c.last4 }}</span></td>
+    <td class="mono"><span class="reveal" data-full="{{ c.cvv }}" data-mask="***">***</span></td>
+    <td class="mono">{{ c.expiry }}</td>
+    <td>{{ '实体卡' if c.card_type == 'physical' else '虚拟卡' }}</td>
+    <td><span class="pill {{ {'available':'p-ok','assigned':'p-pri','revoked':'p-muted'}[c.status] }}">{{ CARD_STATUS[c.status] }}</span></td>
+    <td>{% if c.user_id %}<a href="{{ url_for('user_detail', uid=c.user_id) }}">{{ c.user_email }}</a>{% elif c.last_email %}<small style="color:#6b7290">原：{{ c.last_email }}</small>{% else %}-{% endif %}</td>
+    <td>{{ c.note or '' }}</td>
+    <td>{{ c.created_at }}</td>
+    <td class="row-actions">
+      {% if c.status == 'assigned' %}
+        <form class="inline" method="post" action="{{ url_for('card_revoke', cid=c.id) }}" onsubmit="return confirm('确认撤回？')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ghost-err">撤回</button></form>
+      {% else %}
+        {% if c.status == 'revoked' %}
+        <form class="inline" method="post" action="{{ url_for('card_restore', cid=c.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn">放回库存</button></form>
+        {% endif %}
+        <form class="inline" method="post" action="{{ url_for('card_delete', cid=c.id) }}" onsubmit="return confirm('确认删除该卡？')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ghost-err">删除</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="10" class="empty">暂无卡片</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

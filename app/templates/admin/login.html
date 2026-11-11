@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}登录{% endblock %}
+{% block bare %}
+<div style="min-height:100vh;display:grid;place-items:center;background:#11142a;padding:20px">
+  <form method="post" style="background:#fff;border-radius:18px;padding:36px 32px;width:100%;max-width:380px">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <img src="{{ url_for('static', filename='img/icon.svg') }}" width="34" height="34" alt="">
+      <b style="font-size:20px">{{ cfg.SITE_NAME }} 后台管理</b>
+    </div>
+    <p style="color:#6b7290;margin-bottom:22px">请输入管理员账号密码</p>
+    {% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}<div class="flash flash-{{ c }}">{{ m }}</div>{% endfor %}{% endwith %}
+    <input name="username" placeholder="账号" required autofocus style="width:100%;margin-bottom:12px;padding:11px">
+    <input name="password" type="password" placeholder="密码" required style="width:100%;margin-bottom:18px;padding:11px">
+    <button class="btn btn-pri" style="width:100%;justify-content:center;padding:11px">登录</button>
+  </form>
+</div>
+{% endblock %}

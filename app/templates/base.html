@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ cfg.SITE_NAME }} · 虚拟卡全球支付{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/icon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}?v=3">
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a href="{{ url_for('index') }}" class="logo"><img src="{{ url_for('static', filename='img/logo-dark.svg') }}" alt="{{ cfg.SITE_NAME }}"></a>
+    <ul id="menu">
+      <li><a href="{{ url_for('index') }}#features">产品优势</a></li>
+      <li><a href="{{ url_for('index') }}#bins">卡段介绍</a></li>
+      <li><a href="{{ url_for('index') }}#pricing">套餐价格</a></li>
+      <li><a href="{{ url_for('recharge') }}">充值</a></li>
+      <li><a href="{{ url_for('index') }}#faq">常见问题</a></li>
+      {% if user %}
+      <li class="m-only"><a href="{{ url_for('account') }}">我的账户</a></li>
+      {% else %}
+      <li class="m-only"><a href="{{ url_for('login') }}">登录</a></li>
+      {% endif %}
+    </ul>
+    <div class="act">
+      {% if user %}
+        <a href="{{ url_for('account') }}" class="btn btn-ghost">我的账户</a>
+        <form method="post" action="{{ url_for('logout') }}" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost">退出</button>
+        </form>
+        <a href="{{ url_for('recharge') }}" class="btn btn-pri">充值</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-ghost">登录</a>
+        <a href="{{ url_for('register') }}" class="btn btn-pri">注册</a>
+      {% endif %}
+      <button class="menu-btn" type="button" onclick="document.getElementById('menu').classList.toggle('open')">☰</button>
+    </div>
+  </div>
+</header>
+
+{% with msgs = get_flashed_messages(with_categories=true) %}
+{% if msgs %}
+<div class="wrap flashes">
+  {% for cat, m in msgs %}
+    {% if cat == 'banned' %}
+    <div class="flash flash-banned">{{ m }} · <a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener">点此联系客服</a></div>
+    {% else %}
+    <div class="flash flash-{{ cat }}">{{ m }}</div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<main>{% block content %}{% endblock %}</main>
+
+{% block footer %}
+<footer class="mini">
+  <div class="wrap copyright"><span>© 2026 {{ cfg.SITE_NAME }}. All rights reserved.</span><span>Visa 与 Mastercard 为其各自所有者的注册商标</span></div>
+</footer>
+{% endblock %}
+
+<a class="kefu" href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener" title="联系客服">
+  <span class="dot"></span>
+  <svg viewBox="0 0 24 24" fill="#fff"><path d="M9.8 15.3l-.4 5.3c.6 0 .8-.2 1.1-.5l2.6-2.5 5.4 4c1 .5 1.7.3 2-.9l3.6-17c.3-1.5-.6-2.1-1.6-1.7L1.3 9.9c-1.4.6-1.4 1.4-.2 1.7l5.4 1.7L19 5.4c.6-.4 1.1-.2.7.2z"/></svg>
+  联系客服
+</a>
+
+<script>
+  document.querySelectorAll('#menu a').forEach(a => a.addEventListener('click', () => document.getElementById('menu').classList.remove('open')));
+  // 滚动出现动画
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+  // 通用复制
+  function copyText(text, btn) {
+    const done = () => { if (!btn) return; const t = btn.textContent; btn.textContent = '已复制 ✓'; btn.classList.add('done'); setTimeout(() => { btn.textContent = t; btn.classList.remove('done'); }, 1600); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done, () => { fallback(); done(); }); }
+    else { fallback(); done(); }
+    function fallback() { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove(); }
+  }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

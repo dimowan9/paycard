@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}充值订单{% endblock %}
+{% block content %}
+<h1>💰 充值订单</h1>
+<p style="color:#6b7290;margin:-8px 0 14px">核对链上交易（点击 TxID 打开 Tronscan）确认金额无误后点「确认到账」，用户余额会自动增加到账金额。</p>
+<div class="tabs">
+  {% for k, v in RECHARGE_STATUS.items() %}<a href="{{ url_for('recharges', status=k) }}" class="{{ 'on' if status == k }}">{{ v }}</a>{% endfor %}
+  <a href="{{ url_for('recharges', status='all') }}" class="{{ 'on' if status == 'all' }}">全部</a>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>订单号</th><th>用户</th><th>到账金额</th><th>手续费</th><th>应付 USDT</th><th>备注</th><th>TxID</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td>{{ r.order_no }}</td>
+    <td><a href="{{ url_for('user_detail', uid=r.user_id) }}">{{ r.email }}</a></td>
+    <td>{{ r.amount|money }}</td><td>{{ r.fee|money }}</td><td><b>{{ r.pay_amount|money }}</b></td>
+    <td>{{ r.remark or '' }}</td>
+    <td class="mono">{% if r.txid %}<a href="https://tronscan.org/#/transaction/{{ r.txid }}" target="_blank" rel="noopener">{{ r.txid[:18] }}…</a>{% else %}-{% endif %}</td>
+    <td><span class="pill {{ {'unpaid':'p-warn','submitted':'p-pri','confirmed':'p-ok','rejected':'p-err'}[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td>
+    <td>{{ r.created_at }}</td>
+    <td class="row-actions">
+      {% if r.status in ('unpaid','submitted') %}
+      <form class="inline" method="post" action="{{ url_for('recharge_confirm', rid=r.id) }}" onsubmit="return confirm('确认已收到 {{ r.pay_amount|money }} USDT？用户余额将 +{{ r.amount|money }}')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ok">确认到账</button></form>
+      <form class="inline" method="post" action="{{ url_for('recharge_reject', rid=r.id) }}" onsubmit="return confirm('确认驳回？')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ghost-err">驳回</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="10" class="empty">暂无订单</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<h1>👤 用户管理 <span class="pill p-muted">{{ rows|length }} 个账号</span></h1>
+<form class="search" method="get">
+  <input name="q" value="{{ q }}" placeholder="搜索邮箱 / 注册IP / 登录IP">
+  <button class="btn">搜索</button>
+  {% if q %}<a class="btn" href="{{ url_for('users') }}">清除</a>{% endif %}
+</form>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ID</th><th>邮箱</th><th>注册 IP</th><th>最近登录 IP</th><th>余额</th><th>持卡</th><th>待发卡</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead>
+  <tbody>
+  {% for u in rows %}
+  <tr>
+    <td>{{ u.id }}</td>
+    <td><a href="{{ url_for('user_detail', uid=u.id) }}">{{ u.email }}</a></td>
+    <td class="mono">{{ u.reg_ip }}</td>
+    <td class="mono">{{ u.last_login_ip or '-' }}<br><small style="color:#6b7290">{{ u.last_login_at or '' }}</small></td>
+    <td>{{ u.balance|money }}</td>
+    <td>{{ u.card_count }}</td>
+    <td>{% if u.pending_orders %}<span class="pill p-warn">{{ u.pending_orders }}</span>{% else %}0{% endif %}</td>
+    <td>{% if u.is_banned %}<span class="pill p-err">已封禁</span>{% else %}<span class="pill p-ok">正常</span>{% endif %}</td>
+    <td>{{ u.created_at }}</td>
+    <td class="row-actions">
+      <a class="btn btn-pri" href="{{ url_for('user_detail', uid=u.id) }}">发卡 / 撤回</a>
+      {% if u.is_banned %}
+      <form class="inline" method="post" action="{{ url_for('user_unban', uid=u.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ok">解封</button></form>
+      {% else %}
+      <form class="inline" method="post" action="{{ url_for('user_ban', uid=u.id) }}" onsubmit="return confirm('确认封禁 {{ u.email }}？封禁后该账号将无法登录')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-err">封禁</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="10" class="empty">暂无用户</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

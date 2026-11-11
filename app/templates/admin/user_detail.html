@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ u.email }}{% endblock %}
+{% block content %}
+<h1>
+  <a href="{{ url_for('users') }}">← 用户</a> / {{ u.email }}
+  {% if u.is_banned %}<span class="pill p-err">已封禁</span>{% else %}<span class="pill p-ok">正常</span>{% endif %}
+</h1>
+
+<div class="card">
+  <div class="kv">
+    <div><span>用户 ID</span><b>{{ u.id }}</b></div>
+    <div><span>余额</span><b>{{ u.balance|money }} USDT</b></div>
+    <div><span>注册 IP</span><b class="mono">{{ u.reg_ip }}</b></div>
+    <div><span>最近登录 IP</span><b class="mono">{{ u.last_login_ip or '-' }}</b></div>
+    <div><span>注册时间</span><b>{{ u.created_at }}</b></div>
+    <div><span>最近登录</span><b>{{ u.last_login_at or '-' }}</b></div>
+  </div>
+  <div class="row-actions" style="margin-top:16px">
+    {% if u.is_banned %}
+    <form class="inline" method="post" action="{{ url_for('user_unban', uid=u.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ok">解除封禁</button></form>
+    {% else %}
+    <form class="inline" method="post" action="{{ url_for('user_ban', uid=u.id) }}" onsubmit="return confirm('确认封禁该账号？')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-err">封禁账号</button></form>
+    {% endif %}
+    <form class="inline row-actions" method="post" action="{{ url_for('user_balance', uid=u.id) }}" onsubmit="return confirm('确认调整余额？')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input name="delta" placeholder="余额调整，如 100 或 -50" style="width:200px">
+      <button class="btn">调整余额</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">💳 发卡</h2>
+  {% if stock %}
+  <form method="post" action="{{ url_for('card_issue') }}" class="grid-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="user_id" value="{{ u.id }}">
+    <div>
+      <label>选择库存卡片（共 {{ stock|length }} 张）</label>
+      <select name="card_id" required>
+        {% for s in stock %}<option value="{{ s.id }}">#{{ s.id }} · {{ s.brand }} **** {{ s.last4 }} · {{ s.expiry }} · {{ '实体' if s.card_type == 'physical' else '虚拟' }}{% if s.note %} · {{ s.note }}{% endif %}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>关联购卡订单（可选）</label>
+      <select name="order_id">
+        <option value="">不关联</option>
+        {% for o in orders if o.status == 'pending' %}<option value="{{ o.id }}" {% if loop.first %}selected{% endif %}>{{ o.order_no }} · {{ o.plan_name }}（{{ o.issued }}/{{ o.qty }}）</option>{% endfor %}
+      </select>
+    </div>
+    <div><button class="btn btn-pri" style="width:100%;justify-content:center;padding:9px">发卡给该用户</button></div>
+  </form>
+  {% else %}
+  <p style="color:#6b7290">卡库没有可用卡片，请先到 <a href="{{ url_for('cards') }}">卡库</a> 录入。</p>
+  {% endif %}
+</div>
+
+<h2>该用户持有的卡片（{{ cards|length }}）</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>ID</th><th>卡号（点击显示）</th><th>有效期</th><th>CVV</th><th>类型</th><th>备注</th><th>发卡时间</th><th>操作</th></tr></thead>
+  <tbody>
+  {% for c in cards %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td class="mono"><span class="reveal" data-full="{{ c.number|cardfmt }}" data-mask="{{ c.brand }} **** {{ c.last4 }}">{{ c.brand }} **** {{ c.last4 }}</span></td>
+    <td class="mono">{{ c.expiry }}</td>
+    <td class="mono"><span class="reveal" data-full="{{ c.cvv }}" data-mask="***">***</span></td>
+    <td>{{ '实体卡' if c.card_type == 'physical' else '虚拟卡' }}</td>
+    <td>{{ c.note or '' }}</td>
+    <td>{{ c.assigned_at }}</td>
+    <td><form class="inline" method="post" action="{{ url_for('card_revoke', cid=c.id) }}" onsubmit="return confirm('确认撤回该卡？撤回后用户页面将不再显示')"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-ghost-err">撤回卡</button></form></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8" class="empty">该用户暂无卡片</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>购卡订单</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>订单号</th><th>套餐</th><th>已发/数量</th><th>金额</th><th>状态</th><th>时间</th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+  <tr><td>{{ o.order_no }}</td><td>{{ o.plan_name }}</td><td>{{ o.issued }}/{{ o.qty }}</td><td>{{ o.price|money }}</td>
+    <td><span class="pill {{ {'pending':'p-warn','done':'p-ok','cancelled':'p-muted'}[o.status] }}">{{ CO_STATUS[o.status] }}</span></td><td>{{ o.created_at }}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">无</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>充值记录</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>订单号</th><th>到账</th><th>手续费</th><th>实付</th><th>TxID</th><th>状态</th><th>时间</th></tr></thead>
+  <tbody>
+  {% for r in recharges %}
+  <tr><td>{{ r.order_no }}</td><td>{{ r.amount|money }}</td><td>{{ r.fee|money }}</td><td>{{ r.pay_amount|money }}</td>
+    <td class="mono">{% if r.txid %}<a href="https://tronscan.org/#/transaction/{{ r.txid }}" target="_blank" rel="noopener">{{ r.txid[:16] }}…</a>{% else %}-{% endif %}</td>
+    <td><span class="pill {{ {'unpaid':'p-warn','submitted':'p-pri','confirmed':'p-ok','rejected':'p-err'}[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td><td>{{ r.created_at }}</td></tr>
+  {% else %}<tr><td colspan="7" class="empty">无</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

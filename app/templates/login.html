@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}登录 · {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <form class="auth" method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <h1>登录</h1>
+    <p class="sub">欢迎回来，登录后可充值、购卡并查看你的卡片</p>
+    <div class="field"><label>邮箱</label><input type="email" name="email" value="{{ form.email }}" required autocomplete="email"></div>
+    <div class="field"><label>密码</label><input type="password" name="password" required autocomplete="current-password"></div>
+    <button class="btn btn-pri">登录</button>
+    <p class="alt-link">还没有账号？<a href="{{ url_for('register') }}">立即注册</a> · <a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener">忘记密码联系客服</a></p>
+  </form>
+</div>
+{% endblock %}

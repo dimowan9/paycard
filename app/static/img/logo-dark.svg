@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" width="640" height="200">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6c5cff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b7bff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 图标：两张叠放的卡片组成 P -->
+  <g transform="translate(30,30)">
+    <rect x="18" y="0" width="122" height="140" rx="30" fill="url(#g)" opacity="0.35" transform="rotate(10 79 70)"/>
+    <rect x="0" y="0" width="140" height="140" rx="32" fill="url(#g)"/>
+    <!-- P 字母 -->
+    <path d="M46 108 V34 H82 a22 22 0 0 1 0 44 H46" fill="none" stroke="#fff" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 卡片磁条/芯片点缀 -->
+    <circle cx="104" cy="106" r="8" fill="#fff" opacity="0.9"/>
+  </g>
+
+  <!-- 文字 -->
+  <text x="200" y="118" font-family="Segoe UI, PingFang SC, Helvetica, Arial, sans-serif" font-size="78" font-weight="800" letter-spacing="-2" fill="#ffffff">Pay<tspan fill="url(#t)">Card</tspan></text>
+  <text x="204" y="156" font-family="Segoe UI, PingFang SC, Helvetica, Arial, sans-serif" font-size="20" font-weight="500" letter-spacing="6" fill="#8a90b8">GLOBAL VIRTUAL CARD</text>
+</svg>

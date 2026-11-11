@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}USDT 支付 · {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:1000px">
+  <div class="page-head" style="padding-bottom:28px">
+    <h1>USDT 扫码支付</h1>
+    <p>请使用钱包扫码或复制地址转账，转账后填写交易哈希（TxID）</p>
+  </div>
+
+  <div class="paybox">
+    <div class="left">
+      <div class="netbadge"><b>₮</b>USDT · TRC20（波场网络）</div>
+      <div class="qr"><img src="{{ url_for('static', filename='img/qr.jpg') }}" alt="USDT TRC20 收款二维码"></div>
+      <div class="scan">使用支持 TRC20 的钱包扫一扫</div>
+    </div>
+    <div class="right">
+      <div class="kv"><span>订单号</span><b>{{ order.order_no }}</b></div>
+      <div class="kv"><span>订单类型</span><b>{{ order.remark or '为账户充值' }}</b></div>
+      <div class="kv"><span>到账金额</span><b>{{ order.amount|money }} USDT</b></div>
+      <div class="kv"><span>手续费（{{ fee_pct }}%）</span><b>{{ order.fee|money }} USDT</b></div>
+      <div class="kv"><span>订单状态</span>
+        {% set st = order.status %}
+        <span class="pill {{ {'unpaid':'p-warn','submitted':'p-muted','confirmed':'p-ok','rejected':'p-err'}[st] }}">{{ STATUS_RECHARGE[st] }}</span>
+      </div>
+      <div class="kv" style="border-bottom:0;padding-top:14px"><span>实付金额</span><div class="total">{{ order.pay_amount|money }}<small>USDT</small></div></div>
+
+      <div class="label">USDT 充值地址（TRC20）</div>
+      <div class="addr">
+        <code id="addr">{{ cfg.USDT_ADDRESS }}</code>
+        <button class="copy" type="button" onclick="copyText('{{ cfg.USDT_ADDRESS }}', this)">复制地址</button>
+      </div>
+      <div class="warn">⚠️ 仅可向此地址转入 <b>波场系通证（如 TRX 或 TRC10/20/721 通证）</b>，转入其他网络的通证将<b>无法找回</b>。请按实付金额转账。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>📋 付款后提交交易哈希</h3>
+    <ol>
+      <li>使用钱包向上方地址转账 <b>{{ order.pay_amount|money }} USDT（TRC20）</b></li>
+      <li>在下方填写<b>交易哈希（TxID）</b>并提交</li>
+      <li>客服核实到账后，余额自动增加，即可购买套餐；可联系客服加急</li>
+    </ol>
+    {% if order.status in ('unpaid', 'submitted') %}
+    <form class="txform" method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input class="input" name="txid" value="{{ order.txid or '' }}" placeholder="粘贴交易哈希 TxID" maxlength="128" required>
+      <button class="btn btn-pri">{{ '更新提交' if order.txid else '我已付款，提交' }}</button>
+    </form>
+    {% elif order.status == 'confirmed' %}
+    <p style="color:#6ee7b7;margin-top:12px">✓ 该订单已到账，<a href="{{ url_for('recharge') }}" style="text-decoration:underline">去购买套餐 →</a></p>
+    {% else %}
+    <p style="color:#fca5a5;margin-top:12px">该订单已被驳回，如有疑问请联系客服。</p>
+    {% endif %}
+  </div>
+
+  <div class="actions">
+    <a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener" class="btn btn-tg">✅ 已付款，联系客服加急</a>
+    <a href="{{ url_for('account') }}" class="btn btn-ghost">查看我的账户</a>
+  </div>
+</div>
+{% endblock %}

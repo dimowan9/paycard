@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="tag"><b></b>支持 Visa / Mastercard · 秒级开卡</div>
+      <h1>一站式虚拟卡<br><span class="grad">畅享全球支付</span></h1>
+      <p class="lead">在线开户、即时购卡，支持批量开卡。覆盖 AI 订阅、广告投放、云服务、跨境电商等主流海外支付场景。</p>
+      <div class="cta">
+        <a href="{{ url_for('recharge') }}" class="btn btn-pri">立即充值 →</a>
+        {% if not user %}<a href="{{ url_for('register') }}" class="btn btn-ghost">注册账号</a>{% else %}<a href="{{ url_for('account') }}" class="btn btn-ghost">我的卡片</a>{% endif %}
+      </div>
+      <div class="notice">💡 首次使用需先在本站充值（手续费 {{ fee_pct }}%），充值成功后可 <a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener">联系客服</a> 加急处理</div>
+      <div class="trust"><span>无月费</span><span>USDT 充值</span><span>在线客服</span></div>
+    </div>
+    <div class="cards">
+      <div class="vcard c1">
+        <div class="row"><span class="chip"></span><span class="net">VISA</span></div>
+        <div class="num">4859 •••• •••• 2048</div>
+        <div class="row"><div>持卡人<b>PAYCARD USER</b></div><div>有效期<b>09/29</b></div></div>
+      </div>
+      <div class="vcard c2">
+        <div class="row"><span class="chip"></span><span class="net">MC</span></div>
+        <div class="num">5329 •••• •••• 7716</div>
+        <div class="row"><div>余额<b>$ 1,280.00</b></div><div>有效期<b>12/28</b></div></div>
+      </div>
+      <div class="vcard c3">
+        <div class="row"><span class="chip"></span><span class="net">VISA</span></div>
+        <div class="num">4462 •••• •••• 0391</div>
+        <div class="row"><div>持卡人<b>TEAM CARD</b></div><div>有效期<b>03/30</b></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>为什么选择 <span class="grad">{{ cfg.SITE_NAME }}</span></h2><p>为个人与团队打造的海外支付工具</p></div>
+    <div class="feat-grid">
+      <div class="feat rv"><div class="ic">⚡</div><h3>快速开卡</h3><p>充值购卡后，卡号、有效期、CVV 直接显示在你的账户中。</p></div>
+      <div class="feat rv"><div class="ic">💳</div><h3>多张卡片</h3><p>支持一个账号持有多张卡，适合多账号、多店铺分开使用。</p></div>
+      <div class="feat rv"><div class="ic">🌍</div><h3>全球可用</h3><p>基于 Visa / Mastercard 网络，覆盖海外主流线上商户。</p></div>
+      <div class="feat rv"><div class="ic">🛡️</div><h3>安全隔离</h3><p>每张卡独立使用，与你的银行账户隔离，降低盗刷风险。</p></div>
+      <div class="feat rv"><div class="ic">🪪</div><h3>虚拟卡 / 实体卡</h3><p>线上消费选虚拟卡，线下刷卡可选实体卡。</p></div>
+      <div class="feat rv"><div class="ic">💬</div><h3>在线客服</h3><p>充值、发卡、使用问题，点击右下角即可联系客服。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="bins" class="alt">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>卡段介绍</h2><p>不同卡段适用于不同场景，可咨询客服选择（以下为示例，请按实际修改）</p></div>
+    <div class="tbl-wrap rv">
+      <table class="tbl">
+        <thead><tr><th>卡段 (BIN)</th><th>卡组织</th><th>发卡地区</th><th>推荐场景</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td>4859 XX</td><td><span class="pill p-visa">Visa</span></td><td>美国</td><td>AI 订阅 / SaaS</td><td><span class="pill p-ok">可开卡</span></td></tr>
+          <tr><td>5329 XX</td><td><span class="pill p-mc">Mastercard</span></td><td>美国</td><td>广告投放</td><td><span class="pill p-ok">可开卡</span></td></tr>
+          <tr><td>4462 XX</td><td><span class="pill p-visa">Visa</span></td><td>香港</td><td>跨境电商 / 平台店铺</td><td><span class="pill p-ok">可开卡</span></td></tr>
+          <tr><td>5567 XX</td><td><span class="pill p-mc">Mastercard</span></td><td>英国</td><td>云服务 / 开发者工具</td><td><span class="pill p-ok">可开卡</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="scenes">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>适用场景</h2><p>一张卡，搞定主流海外线上支付</p></div>
+    <div class="scene-grid">
+      <div class="scene rv"><div class="em">🤖</div><h4>AI 工具订阅</h4><p>各类 AI 助手、绘图与编程工具</p></div>
+      <div class="scene rv"><div class="em">📣</div><h4>广告投放</h4><p>主流社交与搜索广告平台</p></div>
+      <div class="scene rv"><div class="em">☁️</div><h4>云服务</h4><p>云主机、域名、CDN、API 计费</p></div>
+      <div class="scene rv"><div class="em">🛒</div><h4>跨境电商</h4><p>店铺月租、物流与平台费用</p></div>
+      <div class="scene rv"><div class="em">🎮</div><h4>游戏与应用</h4><p>应用商店、游戏平台充值</p></div>
+      <div class="scene rv"><div class="em">🎬</div><h4>流媒体会员</h4><p>视频、音乐等海外会员订阅</p></div>
+      <div class="scene rv"><div class="em">✈️</div><h4>旅行出行</h4><p>机票、酒店、租车预订</p></div>
+      <div class="scene rv"><div class="em">💼</div><h4>团队报销</h4><p>为员工分配独立卡片</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>四步开始使用</h2><p>从注册到拿到卡片，只需几分钟</p></div>
+    <div class="steps" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div class="step rv"><h3>注册账号</h3><p>邮箱 + 自定义密码注册，每个 IP 限注册一个账号。</p></div>
+      <div class="step rv"><h3>首次充值</h3><p>首笔需在本站使用 USDT（TRC20）充值，手续费 {{ fee_pct }}%。</p></div>
+      <div class="step rv"><h3>余额购卡</h3><p>到账后用余额购买套餐，生成购卡订单。</p></div>
+      <div class="step rv"><h3>查看卡片</h3><p>发卡后，卡号、有效期、CVV 显示在「我的账户」。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="alt">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>套餐价格</h2><p>所有套餐已包含开卡费用 · 大额优惠请咨询客服</p></div>
+    <div class="price-grid">
+      {% for code, p in plans.items() %}
+      <div class="plan rv {% if loop.index == 2 %}hot{% endif %}">
+        {% if loop.index == 2 %}<span class="badge">🔥 最划算</span>{% endif %}
+        <h3>{{ p.name }}</h3><div class="desc">{{ p.desc }}</div>
+        <div class="price">${{ p.price|money|replace('.00','') }} <small>USDT</small></div>
+        <ul>
+          <li>{{ p.qty }} 张{{ '实体卡' if p.card_type == 'physical' else '虚拟卡' }}</li>
+          <li>已包含开卡费用</li>
+          <li>{{ '线上线下均可使用' if p.card_type == 'physical' else 'Visa / Mastercard 可选' }}</li>
+        </ul>
+        <a href="{{ url_for('recharge') }}" class="btn {% if loop.index == 2 %}btn-pri{% else %}btn-ghost{% endif %}">立即购买</a>
+      </div>
+      {% endfor %}
+    </div>
+    <p style="text-align:center;margin-top:28px;color:var(--muted)">需要其他金额？<a href="{{ url_for('recharge') }}#custom" style="color:#a99eff">自定义金额充值 →</a></p>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-title rv"><h2>常见问题</h2><p>没有找到答案？欢迎联系在线客服</p></div>
+    <div class="faq rv">
+      <details open><summary>如何购买卡片？</summary><p>注册账号 → 在充值页面用 USDT 为账户充值 → 到账后用余额购买套餐 → 卡片发放后显示在「我的账户」。</p></details>
+      <details><summary>为什么首次必须在本站充值？</summary><p>账户余额只能通过本站充值获得，首笔充值到账后才能购买套餐。充值收取 {{ fee_pct }}% 手续费。</p></details>
+      <details><summary>支持哪些充值方式？</summary><p>目前支持 USDT（TRC20 / 波场网络）。请务必使用 TRC20 网络转账，其他网络转入将无法找回。</p></details>
+      <details><summary>充值后多久到账？</summary><p>转账后在订单页填写交易哈希（TxID），客服核实后即到账。可点击右下角联系客服加急。</p></details>
+      <details><summary>为什么无法注册？</summary><p>为防止恶意注册，每个 IP 仅能注册一个账号。如有特殊情况请联系客服。</p></details>
+      <details><summary>登录提示「登录失败，请联系客服」？</summary><p>说明账号状态异常，请点击右下角联系客服处理。</p></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="cta-box rv">
+      <h2>现在开始，畅享全球支付</h2>
+      <p>注册并完成首次充值，几分钟拿到你的第一张卡</p>
+      <a href="{{ url_for('register') if not user else url_for('recharge') }}" class="btn">{{ '立即注册 →' if not user else '立即充值 →' }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block footer %}
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a href="{{ url_for('index') }}" class="logo" style="margin-bottom:14px"><img src="{{ url_for('static', filename='img/logo-dark.svg') }}" alt="{{ cfg.SITE_NAME }}"></a>
+        <p>安全、便捷的虚拟卡全球支付服务。</p>
+      </div>
+      <div><h5>产品</h5><a href="#features">产品优势</a><a href="#bins">卡段介绍</a><a href="#pricing">套餐价格</a></div>
+      <div><h5>账户</h5><a href="{{ url_for('register') }}">注册</a><a href="{{ url_for('login') }}">登录</a><a href="{{ url_for('recharge') }}">充值</a></div>
+      <div><h5>支持</h5><a href="#faq">常见问题</a><a href="{{ cfg.KEFU_URL }}" target="_blank" rel="noopener">联系客服</a></div>
+    </div>
+    <div class="copyright"><span>© 2026 {{ cfg.SITE_NAME }}. All rights reserved.</span><span>Visa 与 Mastercard 为其各自所有者的注册商标</span></div>
+  </div>
+</footer>
+{% endblock %}
