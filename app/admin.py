@@ -31,7 +31,10 @@ app.jinja_env.filters["cardfmt"] = format_card
 
 EXPIRY_RE = re.compile(r"^(0[1-9]|1[0-2])/\d{2}$")
 CARD_STATUS = {"available": "库存", "assigned": "已发卡", "revoked": "已撤回"}
-RECHARGE_STATUS = {"unpaid": "待付款", "submitted": "待确认", "confirmed": "已到账", "rejected": "已驳回"}
+RECHARGE_STATUS = {"unpaid": "待付款", "submitted": "待确认", "confirmed": "已到账·入余额",
+                   "paid": "已支付·发卡核销", "rejected": "已驳回", "expired": "已过期"}
+RECHARGE_PILL = {"unpaid": "p-warn", "submitted": "p-pri", "confirmed": "p-ok",
+                 "paid": "p-ok", "rejected": "p-err", "expired": "p-muted"}
 CO_STATUS = {"pending": "待发卡", "done": "已完成", "cancelled": "已取消"}
 
 
@@ -54,7 +57,8 @@ def _ctx():
         pending["card"] = db.query("SELECT COUNT(*) AS n FROM card_orders WHERE status='pending'", one=True)["n"]
         pending["stock"] = db.query("SELECT COUNT(*) AS n FROM cards WHERE status='available'", one=True)["n"]
     return dict(csrf_token=csrf_token, admin=g.get("admin"), cfg=config, pending=pending,
-                CARD_STATUS=CARD_STATUS, RECHARGE_STATUS=RECHARGE_STATUS, CO_STATUS=CO_STATUS)
+                CARD_STATUS=CARD_STATUS, RECHARGE_STATUS=RECHARGE_STATUS,
+                RECHARGE_PILL=RECHARGE_PILL, CO_STATUS=CO_STATUS)
 
 
 def back(default="users"):
@@ -188,8 +192,8 @@ def cards():
         err = None
         if not re.fullmatch(r"\d{12,19}", number):
             err = "卡号应为 12-19 位数字"
-        elif not re.fullmatch(r"\d{3,4}", cvv):
-            err = "CVV 应为 3-4 位数字"
+        elif not re.fullmatch(r"\d{3}", cvv):
+            err = "CVV 安全码必须为 3 位数字，请核对后重新录入"
         elif not EXPIRY_RE.match(expiry):
             err = "有效期格式应为 MM/YY，例如 09/28"
         elif card_type not in ("virtual", "physical"):
@@ -245,12 +249,25 @@ def card_issue():
         db.rollback()
         flash("发卡失败：该卡已不在库存中", "error")
         return back()
+    settled = None
     if oid:
         db.execute("UPDATE card_orders SET issued = issued + 1, updated_at=%s WHERE id=%s AND user_id=%s",
                    (now(), oid, uid))
         db.execute("UPDATE card_orders SET status='done' WHERE id=%s AND issued >= qty", (oid,))
+    else:
+        # 直发（不走余额购卡）：以发卡为准，把该用户最近一条未核销的付款记录标记为「已支付」
+        # 注意：paid 不会给用户加余额（这笔钱直接换了这张卡），与「确认到账·入余额」互斥
+        ro = db.query("SELECT id, order_no, pay_amount FROM recharge_orders "
+                      "WHERE user_id=%s AND status IN ('unpaid','submitted') ORDER BY id DESC LIMIT 1",
+                      (uid,), one=True)
+        if ro:
+            db.execute("UPDATE recharge_orders SET status='paid', updated_at=%s WHERE id=%s", (now(), ro["id"]))
+            settled = ro
     db.commit()
-    flash(f"已向 {user['email']} 发卡，用户刷新页面即可看到", "success")
+    msg = f"已向 {user['email']} 发卡，用户刷新页面即可看到"
+    if settled:
+        msg += f"；其最近一笔付款订单 {settled['order_no']}（实付 {money(settled['pay_amount'])} USDT）已标记为「已支付」"
+    flash(msg, "success")
     return back()
 
 

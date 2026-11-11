@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_at  DATETIME      NULL,
   balance        DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   is_banned      TINYINT(1)    NOT NULL DEFAULT 0,
+  failed_logins  INT           NOT NULL DEFAULT 0,
+  locked_until   DATETIME      NULL,
   created_at     DATETIME      NOT NULL,
   UNIQUE KEY uk_email (email),
   UNIQUE KEY uk_reg_ip (reg_ip)
@@ -71,10 +73,12 @@ CREATE TABLE IF NOT EXISTS recharge_orders (
   pay_amount  DECIMAL(12,2) NOT NULL,
   remark      VARCHAR(255)  NULL,
   txid        VARCHAR(128)  NULL,
-  status      VARCHAR(16)   NOT NULL DEFAULT 'unpaid',    -- unpaid / submitted / confirmed / rejected
+  -- unpaid待付款 / submitted已提交 / confirmed已到账(加余额) / paid已支付·发卡核销(不加余额) / rejected驳回 / expired过期
+  status      VARCHAR(16)   NOT NULL DEFAULT 'unpaid',
   created_at  DATETIME      NOT NULL,
   updated_at  DATETIME      NULL,
   UNIQUE KEY uk_order_no (order_no),
+  UNIQUE KEY uk_txid (txid),            -- 同一交易哈希只能核销一次，防止一笔转账重复使用
   KEY idx_user (user_id),
   KEY idx_status (status),
   CONSTRAINT fk_ro_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

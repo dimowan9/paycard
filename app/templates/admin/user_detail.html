@@ -99,7 +99,7 @@
   {% for r in recharges %}
   <tr><td>{{ r.order_no }}</td><td>{{ r.amount|money }}</td><td>{{ r.fee|money }}</td><td>{{ r.pay_amount|money }}</td>
     <td class="mono">{% if r.txid %}<a href="https://tronscan.org/#/transaction/{{ r.txid }}" target="_blank" rel="noopener">{{ r.txid[:16] }}…</a>{% else %}-{% endif %}</td>
-    <td><span class="pill {{ {'unpaid':'p-warn','submitted':'p-pri','confirmed':'p-ok','rejected':'p-err'}[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td><td>{{ r.created_at }}</td></tr>
+    <td><span class="pill {{ RECHARGE_PILL[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td><td>{{ r.created_at }}</td></tr>
   {% else %}<tr><td colspan="7" class="empty">无</td></tr>{% endfor %}
   </tbody>
 </table>

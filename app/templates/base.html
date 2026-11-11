@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}{{ cfg.SITE_NAME }} · 虚拟卡全球支付{% endblock %}</title>
+{# —— 分享预览（Telegram / 微信 / Twitter 等发送域名时显示的介绍卡片）—— #}
+{% set og_desc = '在线开卡，秒速下发 · Visa / Mastercard 虚拟卡与实体卡 · USDT 充值即用，畅享 AI 订阅、广告投放、云服务、跨境电商等全球支付' %}
+<meta name="description" content="{{ og_desc }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ cfg.SITE_NAME }}">
+<meta property="og:title" content="{{ cfg.SITE_NAME }} · 虚拟卡开卡 / 全球支付">
+<meta property="og:description" content="{{ og_desc }}">
+<meta property="og:url" content="{{ request.url }}">
+<meta property="og:image" content="{{ url_for('static', filename='img/icon.png', _external=True) }}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ cfg.SITE_NAME }} · 虚拟卡开卡 / 全球支付">
+<meta name="twitter:description" content="{{ og_desc }}">
 <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/icon.svg') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}?v=3">
 </head>

@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_ip TEXT, last_login_at TEXT,
   balance NUMERIC NOT NULL DEFAULT 0,
   is_banned INTEGER NOT NULL DEFAULT 0,
+  failed_logins INTEGER NOT NULL DEFAULT 0,
+  locked_until TEXT,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS card_orders (
@@ -34,7 +36,7 @@ CREATE TABLE IF NOT EXISTS recharge_orders (
   order_no TEXT NOT NULL UNIQUE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   amount NUMERIC NOT NULL, fee NUMERIC NOT NULL, pay_amount NUMERIC NOT NULL,
-  remark TEXT, txid TEXT, status TEXT NOT NULL DEFAULT 'unpaid',
+  remark TEXT, txid TEXT UNIQUE, status TEXT NOT NULL DEFAULT 'unpaid',
   created_at TEXT NOT NULL, updated_at TEXT
 );
 CREATE TABLE IF NOT EXISTS admins (

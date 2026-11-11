@@ -2,7 +2,7 @@
 {% block title %}充值订单{% endblock %}
 {% block content %}
 <h1>💰 充值订单</h1>
-<p style="color:#6b7290;margin:-8px 0 14px">核对链上交易（点击 TxID 打开 Tronscan）确认金额无误后点「确认到账」，用户余额会自动增加到账金额。</p>
+<p style="color:#6b7290;margin:-8px 0 14px">核对链上交易（点击 TxID 打开 Tronscan）确认金额无误后点「确认到账」，用户余额自动增加。「已支付·发卡核销」为直发卡时自动标记，不入余额。同一 TxID 只能核销一个订单。</p>
 <div class="tabs">
   {% for k, v in RECHARGE_STATUS.items() %}<a href="{{ url_for('recharges', status=k) }}" class="{{ 'on' if status == k }}">{{ v }}</a>{% endfor %}
   <a href="{{ url_for('recharges', status='all') }}" class="{{ 'on' if status == 'all' }}">全部</a>
@@ -18,7 +18,7 @@
     <td>{{ r.amount|money }}</td><td>{{ r.fee|money }}</td><td><b>{{ r.pay_amount|money }}</b></td>
     <td>{{ r.remark or '' }}</td>
     <td class="mono">{% if r.txid %}<a href="https://tronscan.org/#/transaction/{{ r.txid }}" target="_blank" rel="noopener">{{ r.txid[:18] }}…</a>{% else %}-{% endif %}</td>
-    <td><span class="pill {{ {'unpaid':'p-warn','submitted':'p-pri','confirmed':'p-ok','rejected':'p-err'}[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td>
+    <td><span class="pill {{ RECHARGE_PILL[r.status] }}">{{ RECHARGE_STATUS[r.status] }}</span></td>
     <td>{{ r.created_at }}</td>
     <td class="row-actions">
       {% if r.status in ('unpaid','submitted') %}

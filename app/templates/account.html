@@ -66,7 +66,7 @@
       <tbody>
         {% for r in recharges %}
         <tr><td>{{ r.order_no }}</td><td>{{ r.remark }}</td><td>{{ r.amount|money }}</td><td>{{ r.fee|money }}</td><td>{{ r.pay_amount|money }}</td>
-          <td><span class="pill {{ {'unpaid':'p-warn','submitted':'p-muted','confirmed':'p-ok','rejected':'p-err'}[r.status] }}">{{ STATUS_RECHARGE[r.status] }}</span></td>
+          <td><span class="pill {{ STATUS_PILL[r.status] }}">{{ STATUS_RECHARGE[r.status] }}</span></td>
           <td>{{ r.created_at }}</td>
           <td>{% if r.status in ('unpaid','submitted') %}<a class="btn btn-ghost btn-sm" href="{{ url_for('pay', order_no=r.order_no) }}">{{ '去支付' if r.status == 'unpaid' else '查看' }}</a>{% endif %}</td></tr>
         {% else %}

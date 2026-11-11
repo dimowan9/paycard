@@ -1,5 +1,5 @@
 """用户站：首页 / 注册 / 登录 / 充值 / 支付 / 我的账户（gunicorn app.web:app，127.0.0.1:5000）"""
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import wraps
 from urllib.parse import urlparse
@@ -29,10 +29,17 @@ db.init_app(app)
 app.jinja_env.filters["money"] = money
 app.jinja_env.filters["cardfmt"] = format_card
 
-STATUS_RECHARGE = {"unpaid": "待付款", "submitted": "待确认", "confirmed": "已到账", "rejected": "已驳回"}
+STATUS_RECHARGE = {"unpaid": "待付款", "submitted": "已提交·待核实", "confirmed": "已到账",
+                   "paid": "已支付", "rejected": "已驳回", "expired": "已过期"}
+STATUS_PILL = {"unpaid": "p-warn", "submitted": "p-muted", "confirmed": "p-ok",
+               "paid": "p-ok", "rejected": "p-err", "expired": "p-muted"}
 STATUS_CARD_ORDER = {"pending": "待发卡", "done": "已发卡", "cancelled": "已取消"}
 
 LOGIN_FAIL_BANNED = "登录失败，请联系客服"
+MAX_OPEN_ORDERS = 10          # 每个账号同时存在的未完成充值订单上限
+ORDER_EXPIRE_HOURS = 72       # 未付款订单过期时间
+LOCK_AFTER_FAILS = 10         # 连续密码错误次数
+LOCK_MINUTES = 15             # 锁定时长
 
 
 def client_ip():
@@ -56,7 +63,8 @@ def _before():
 def _ctx():
     return dict(csrf_token=csrf_token, user=g.get("user"), cfg=config, plans=config.PLANS,
                 fee_pct=(config.FEE_RATE * 100).normalize(),
-                STATUS_RECHARGE=STATUS_RECHARGE, STATUS_CARD_ORDER=STATUS_CARD_ORDER)
+                STATUS_RECHARGE=STATUS_RECHARGE, STATUS_PILL=STATUS_PILL,
+                STATUS_CARD_ORDER=STATUS_CARD_ORDER)
 
 
 def login_required(fn):
@@ -135,12 +143,23 @@ def login():
         pw = request.form.get("password", "")
         form["email"] = email
         user = db.query("SELECT * FROM users WHERE email=%s", (email,), one=True)
-        if not user or not check_password_hash(user["password_hash"], pw):
+        # 连续密码错误锁定（防爆破）：锁定期内即使密码正确也拒绝
+        if user and user.get("locked_until") and str(user["locked_until"]) > now():
+            flash(f"登录失败次数过多，账号已临时锁定，请 {LOCK_MINUTES} 分钟后再试", "error")
+        elif not user or not check_password_hash(user["password_hash"], pw):
+            if user:
+                fails = (user.get("failed_logins") or 0) + 1
+                if fails >= LOCK_AFTER_FAILS:
+                    until = (datetime.now() + timedelta(minutes=LOCK_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
+                    db.execute("UPDATE users SET failed_logins=0, locked_until=%s WHERE id=%s", (until, user["id"]))
+                else:
+                    db.execute("UPDATE users SET failed_logins=%s WHERE id=%s", (fails, user["id"]))
+                db.commit()
             flash("邮箱或密码错误", "error")
         elif user["is_banned"]:
             flash(LOGIN_FAIL_BANNED, "banned")
         else:
-            db.execute("UPDATE users SET last_login_ip=%s, last_login_at=%s WHERE id=%s",
+            db.execute("UPDATE users SET last_login_ip=%s, last_login_at=%s, failed_logins=0, locked_until=NULL WHERE id=%s",
                        (client_ip(), now(), user["id"]))
             db.commit()
             session.clear()
@@ -170,6 +189,17 @@ def recharge_create():
     if amount is None or amount < config.MIN_RECHARGE or amount > config.MAX_RECHARGE:
         flash(f"充值金额需在 {money(config.MIN_RECHARGE)} - {money(config.MAX_RECHARGE)} USDT 之间", "error")
         return redirect(url_for("recharge", amount=request.form.get("amount", "")) + "#custom")
+    # 超过 72 小时未付款的订单自动过期
+    expire_before = (datetime.now() - timedelta(hours=ORDER_EXPIRE_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
+    db.execute("UPDATE recharge_orders SET status='expired', updated_at=%s "
+               "WHERE user_id=%s AND status='unpaid' AND created_at < %s", (now(), g.user["id"], expire_before))
+    # 防刷单：未完成（待付款/待核实）订单不能超过上限
+    open_n = db.query("SELECT COUNT(*) AS n FROM recharge_orders WHERE user_id=%s AND status IN ('unpaid','submitted')",
+                      (g.user["id"],), one=True)["n"]
+    if open_n >= MAX_OPEN_ORDERS:
+        db.commit()
+        flash(f"你有 {open_n} 笔未完成的充值订单，已达上限（{MAX_OPEN_ORDERS} 笔）。请先完成付款或等待订单过期后再创建", "error")
+        return redirect(url_for("account"))
     fee = fee_of(amount)
     order_no = new_order_no("R")
     db.execute(
@@ -218,11 +248,17 @@ def pay(order_no):
             flash("该订单已处理，无需重复提交", "info")
         elif len(txid) < 10:
             flash("请填写正确的交易哈希（TxID）", "error")
+        elif db.query("SELECT id FROM recharge_orders WHERE txid=%s AND id<>%s", (txid, order["id"]), one=True):
+            flash("该交易哈希已被使用，一笔转账只能核销一个订单。如有疑问请联系客服", "error")
         else:
-            db.execute("UPDATE recharge_orders SET txid=%s, status='submitted', updated_at=%s WHERE id=%s",
-                       (txid, now(), order["id"]))
-            db.commit()
-            flash("已提交，客服核实到账后余额会自动增加。可点击右下角联系客服加快处理", "success")
+            try:
+                db.execute("UPDATE recharge_orders SET txid=%s, status='submitted', updated_at=%s WHERE id=%s",
+                           (txid, now(), order["id"]))
+                db.commit()
+                flash("已提交，以后台核实为准：客服确认到账后余额才会增加。可点击右下角联系客服加快处理", "success")
+            except db.IntegrityError:
+                db.rollback()
+                flash("该交易哈希已被使用，一笔转账只能核销一个订单。如有疑问请联系客服", "error")
         return redirect(url_for("pay", order_no=order_no))
     return render_template("pay.html", order=order)
 

@@ -20,7 +20,7 @@
       <div class="kv"><span>手续费（{{ fee_pct }}%）</span><b>{{ order.fee|money }} USDT</b></div>
       <div class="kv"><span>订单状态</span>
         {% set st = order.status %}
-        <span class="pill {{ {'unpaid':'p-warn','submitted':'p-muted','confirmed':'p-ok','rejected':'p-err'}[st] }}">{{ STATUS_RECHARGE[st] }}</span>
+        <span class="pill {{ STATUS_PILL[st] }}">{{ STATUS_RECHARGE[st] }}</span>
       </div>
       <div class="kv" style="border-bottom:0;padding-top:14px"><span>实付金额</span><div class="total">{{ order.pay_amount|money }}<small>USDT</small></div></div>
 
@@ -38,7 +38,8 @@
     <ol>
       <li>使用钱包向上方地址转账 <b>{{ order.pay_amount|money }} USDT（TRC20）</b></li>
       <li>在下方填写<b>交易哈希（TxID）</b>并提交</li>
-      <li>客服核实到账后，余额自动增加，即可购买套餐；可联系客服加急</li>
+      <li>订单状态以<b>后台核实 / 发卡</b>为准：客服确认后余额才会增加，提交 TxID 不代表到账</li>
+      <li>一个交易哈希只能核销一个订单；到账后即可购买套餐，可联系客服加急</li>
     </ol>
     {% if order.status in ('unpaid', 'submitted') %}
     <form class="txform" method="post">

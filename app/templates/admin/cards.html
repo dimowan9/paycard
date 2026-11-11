@@ -8,7 +8,7 @@
   <form method="post" class="grid-form" autocomplete="off">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <div><label>卡号</label><input name="card_number" required placeholder="4859 1234 5678 2048" inputmode="numeric"></div>
-    <div><label>CVV 安全码</label><input name="cvv" required maxlength="4" placeholder="123" inputmode="numeric"></div>
+    <div><label>CVV 安全码（3 位）</label><input name="cvv" required minlength="3" maxlength="3" pattern="\d{3}" placeholder="3 位数字" inputmode="numeric"></div>
     <div><label>有效期（MM/YY）</label><input name="expiry" required maxlength="5" placeholder="09/28"></div>
     <div><label>类型</label><select name="card_type"><option value="virtual">虚拟卡</option><option value="physical">实体卡</option></select></div>
     <div><label>备注（选填，用户可见）</label><input name="note" maxlength="255" placeholder="如：适用于广告投放"></div>
